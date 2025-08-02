@@ -26,3 +26,29 @@
 - 다양한 Reader/Writer 지원
   - 파일(CSV, XML, JSON), DB(JDBC, JPA), JMS, MongoDB 등의 다양한 데이터 소스를 기본적으로 지원
   - 커스텀 ItemReader/Writer로 새로운 데이터 소스에 쉽게 대응 가능
+
+### Spring Batch 구조
+- 구조
+  - ![architecture.png](image/architecture.png)
+    - JobLauncher
+      - 배치 잡(Job)을 실행하는 진입점
+    - Job
+      - 하나의 배치 작업 단위
+      - 내부에 여러 개의 Step으로 구성
+    - Step
+      - Chunk 기반 처리나 Tasklet 단위로 비즈니스 로직을 수행
+    - JobRepository
+      - 배치 메타데이터(실행 기록, 파라미터, 상태 등)를 저장 및 조회하는 저장소
+    - Database
+      - 배치 메타데이터 테이블이 생성·관리되는 물리적 저장소
+    - Tasklet
+      - Step 내에서 단일 작업 단위를 수행하는 컴포넌트
+    - Chunk Base
+      - 데이터를 처리하는 묶음의 크기
+    - ItemReader
+      - 처리 대상을 읽어오는 단계
+    - ItemProcessor
+      - 읽어온 아이템을 가공·변환·검증하는 단계
+    - ItemWriter
+      - 가공된 아이템을 저장하거나 전송
+    
