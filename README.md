@@ -77,3 +77,38 @@
 - JobInstance의 한 번의 실제 실행 이력
 - 하나의 JobInstance(특정 JobName+JobParameters)에 대해 여러 번 실행(재시작, 실패 후 재시도 등)이 있을 수 있음
 - 실행마다 별도의 JobExecution이 생성되고, 각각 status(성공/실패), 시작/종료 시각, 에러메시지, 종료코드 등이 저장
+
+### Step
+- Step은 Spring Batch에서 ‘실제 데이터 처리’가 일어나는 최소 단위이다.
+- 하나의 Job은 여러 개의 Step으로 이루어질 수 있고, 각 Step이 순차적 혹은 조건에 따라 실행되면서 전체 배치 작업이 완성된다.
+- Step 내부에서는 Reader → Processor → Writer의 구조로 데이터를 읽고(Reader), 가공하고(Processor), 저장(Writer) 한다.
+- Step이 실행될 때마다 처리 건수, 성공/실패, 상태 등이 메타테이블에 기록되어 모니터링, 장애 대응, 재시작에 활용된다.
+- Step은 Tasklet 기반(단일 작업) 또는 Chunk 기반(데이터 묶음 단위 반복 처리)으로 구현할 수 있다.
+
+### Step 구성방식
+- 구성방식에는 크게 두 가지가 존재한다.
+  - TaskletStep
+    - 하나의 Step에서 ‘특정 로직’을 단일 작업으로 실행할 때 사용.
+      - ex) 파일 삭제, 외부 시스템 알림 전송, 단건 처리 등.
+    - Tasklet 인터페이스를 구현해서 원하는 로직만 작성하면 된다.
+  - ChunkOrientedTasklet (Chunk 기반 Step, 실무에서 가장 많이 사용)
+    - 대용량 데이터를 ‘Chunk’(묶음) 단위로 반복 처리.
+      - ex) 1000건 데이터를 100건씩 나누어 읽고, 가공, 저장 반복.
+    - 내부적으로 ItemReader → ItemProcessor → ItemWriter 구조를 따름.
+    - 데이터 집계, 이관, 대량 파일 처리 등 대부분의 배치 처리에 사용.
+
+### StepExecution
+- Step의 한 번의 실행을 뜻한다. (즉 실행 이력 단위)
+- 언제, 어떤 상태로 실행됐고, 성공/실패/중단 등 결과가 어떻게 됐는지 모두 기록
+  - 실행 시작/종료 시간, 상태(성공, 실패 등), 처리/읽은/쓰여진 건수, 에러 메시지 등을 알 수 있다.
+  - 장애 발생 시, 어느 Step에서 문제가 발생했는지 추적하는 용도로 사용할 수 있다.
+- BATCH_STEP_EXECUTION 테이블에 이력 저장
+
+### StepContribution
+- StepExecution 내부에서 한 Chunk(묶음)의 처리 결과를 누적·집계하는 역할.
+- 청크 기반 처리에서 각 Chunk별로 Reader/Processor/Writer의 처리 결과를 기록하고, StepExecution에 반영
+- 읽은/처리한/쓰여진/스킵된 아이템 수를 알 수 있다.
+  - 성능 튜닝, 장애 분석, 청크 사이즈 조정 시 StepContribution 로그가 매우 유용함
+- 동작방식
+  - 청크 사이즈마다 ItemReader → ItemProcessor → ItemWriter가 실행되고, 그 결과가 StepContribution에 저장된다.
+  - 모든 Chunk가 끝나면 StepContribution의 통계 정보가 StepExecution에 합산된다.
