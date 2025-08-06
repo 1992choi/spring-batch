@@ -11,6 +11,14 @@ spring:
       isolation-level-for-create: REPEATABLE_READ
     job:
       name: ${job.name:NONE}
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+    generate-ddl: true
+    show-sql: true
+    hibernate:
+      ddl-auto: none
 
 logging:
   level:
