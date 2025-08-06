@@ -136,3 +136,24 @@
     - 네트워크 대역폭을 초과해 실패하거나, 처리 지연
   - 메모리 사용량 폭증
     - Chunk 사이즈가 클수록 한 번에 처리할 데이터를 메모리에 모두 올려야해서 JVM OutOfMemory 등, 서버 메모리 한계 초과로 배치 실패 위험
+
+### ItemReader
+- ItemReader란?
+  - Step에서 데이터를 읽어오는 역할
+  - 다양한 데이터 소스(JPA, JDBC, 파일, API 등)에서 데이터 추출
+- 주요 구현체와 특징
+  - JpaPagingItemReader
+    - JPA 기반, 페이징 처리로 대용량 데이터 안전하게 읽기
+    - JPQL 쿼리 사용, 한 번에 메모리 과부하 방지
+    - flush/clear 타이밍, 영속성 컨텍스트 관리가 필요하다.
+  - JdbcCursorItemReader
+    - DB Cursor 기반, 한 줄씩 직접 읽어오기
+    - 커넥션 점유, 트랜잭션 길어질 경우 부하가 발생할 수 있다.
+  - FlatFileItemReader
+    - CSV/텍스트 파일 등 외부 파일 데이터 읽기
+    - 파일 인코딩, 구분자, 헤더/스킵 처리 등이 정확해야한다.
+- ItemReader 사용 시 주의점
+  - 대량 데이터 처리 시 한 번에 너무 많은 데이터 읽으면 OutOfMemory 등 메모리 이슈 발생
+  - 커서 방식 Reader는 DB에 부하, 커넥션 장시간 점유
+  - 페이징 Reader는 쿼리 튜닝 필수, 인덱스 유무 확인
+  - 파일 Reader는 잘못된 포맷, 줄바꿈 문자 등으로 오류가 발생할 수 있음
