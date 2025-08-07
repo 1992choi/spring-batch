@@ -11,7 +11,7 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.item.ItemProcessor;
-import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.database.JpaItemWriter;
 import org.springframework.batch.item.database.JpaPagingItemReader;
 import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,7 +29,11 @@ import java.util.Collections;
       - --job.name=paymentReportJobEx04 paymentDate=2025-05-01
 
     - 강의정리
-       - JPA 페이징 방식을 통해 Chunk 기반 배치를 수행할 수 있다.
+       - ItemReader : JPA 페이징 방식을 통해 처리할 데이터를 조회할 수 있다.
+       - ItemProcessor : ItemReader를 통해 읽은 데이터를 가공하여 ItemWriter로 전달한다.
+       - ItemWriter : 최종적으로 데이터를 저장한다.
+
+       위 방식은 모두 Chunk 기반으로 동작한다.
  */
 @Slf4j
 @Configuration
@@ -90,16 +94,11 @@ public class Ex04_PaymentReportConfig {
         };
     }
 
-    private ItemWriter<Payment> paymentReportWriter() {
-        return payments -> {
-            payments.forEach(payment ->
-                    log.info("Payment 로그 출력: 금액={}, 결제일={}, 상태={}",
-                            payment.getAmount(),
-                            payment.getPaymentDate(),
-                            payment.getStatus()
-                    )
-            );
-        };
+    @Bean
+    public JpaItemWriter<Payment> paymentReportWriter() {
+        JpaItemWriter<Payment> writer = new JpaItemWriter<>();
+        writer.setEntityManagerFactory(entityManagerFactory);
+        return writer;
     }
 
 }
