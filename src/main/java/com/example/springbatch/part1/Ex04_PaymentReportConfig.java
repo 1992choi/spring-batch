@@ -10,6 +10,7 @@ import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JpaPagingItemReader;
 import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
@@ -18,6 +19,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collections;
 
@@ -53,8 +55,9 @@ public class Ex04_PaymentReportConfig {
             JpaPagingItemReader<PaymentSource> paymentReportReader
     ) {
         return new StepBuilder("paymentReportStepEx04", jobRepository)
-                .<PaymentSource, PaymentSource>chunk(10, transactionManager)
+                .<PaymentSource, Payment>chunk(10, transactionManager)
                 .reader(paymentReportReader)
+                .processor(paymentReportProcessor())
                 .writer(paymentReportWriter())
                 .build();
     }
@@ -73,12 +76,30 @@ public class Ex04_PaymentReportConfig {
                 .build();
     }
 
-    private ItemWriter<PaymentSource> paymentReportWriter() {
-        return items -> items.forEach(paymentSource ->
-                log.info("PaymentSource 로그 출력: 원래 금액={}, 할인 금액={}, 최종 금액={}",
-                        paymentSource.getOriginalAmount(),
-                        paymentSource.getDiscountAmount(),
-                        paymentSource.getFinalAmount()));
+    private ItemProcessor<PaymentSource, Payment> paymentReportProcessor() {
+        return paymentSource -> {
+            if (paymentSource.getFinalAmount().compareTo(BigDecimal.ZERO) == 0) {
+                return null; // ItemProcessor에서 null로 반환되면 writer에는 해당 데이터가 전달되지 않는다. (필터링 개념)
+            }
+            return new Payment(
+                    null,
+                    paymentSource.getFinalAmount(),
+                    paymentSource.getPaymentDate(),
+                    "PAYMENT"
+            );
+        };
+    }
+
+    private ItemWriter<Payment> paymentReportWriter() {
+        return payments -> {
+            payments.forEach(payment ->
+                    log.info("Payment 로그 출력: 금액={}, 결제일={}, 상태={}",
+                            payment.getAmount(),
+                            payment.getPaymentDate(),
+                            payment.getStatus()
+                    )
+            );
+        };
     }
 
 }
