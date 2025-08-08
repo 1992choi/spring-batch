@@ -219,3 +219,17 @@
     - Retry 대상에서 제외할 예외 타입을 지정한다.
   - noRollback(Class<? extends Throwable> type>)
     - 지정한 예외 타입이 발생해도 트랜잭션을 롤백하지 않고 커밋된 데이터를 유지한다.
+
+### skipPolicy
+- 종류
+  - LimitCheckingItemSkipPolicy
+    - 특정 예외 타입에 대해 지정된 횟수까지만 스킵을 허용한다.
+    - 지정된 예외 타입일 때만, 그리고 총 스킵 횟수가 skipLimit을 초과하지 않을 때만 스킵을 허용하는 기본 정책.
+    - 대부분의 간단한 skip 시나리오에 적합
+  - AlwaysSkipItemSkipPolicy
+    - 항상 스킵을 수행한다.
+    - 개발 초기 테스트 나 PoC 단계에서 오류를 잠시 억제
+  - NeverSkipItemSkipPolicy
+    - 항상 스킵을 수행하지 않는다.
+    - 스킵 기능을 완전히 비활성화하고, 오류 발생 즉시 중단하고 싶을 때 사용.
+      - 순차적으로 처리가 필요하여 건너뛰면 안되는 케이스.
