@@ -184,3 +184,38 @@
   - Writer는 한 번에 Chunk만큼의 데이터를 저장하기 때문에, 너무 크면 트랜잭션 부담이 되고 너무 작으면 I/O 오버헤드가 발생한다.
   - 저장 실패 시 배치 전체가 중단될 수 있으니 롤백, 재시도 등에 대한 전략이 필요하다.
   - 저장 후 데이터의 실제 상태를 검증하는 것이 좋다.
+
+### 내결함성(Fault Tolerance)
+- 내결함성이란?
+  - 배치 처리 중 작은 데이터 오류나 일시적 장애가 발생해도 Step 전체를 곧바로 실패시키지 않고, 건너뛰기 또는 재시도 로직을 적용해 계속 진행할 수 있도록 하는 기능.
+- 필요성
+  - 대용량 데이터 처리 시 일부 데이터 오류나 외부 시스템 장애가 항상 발생할 수 있음
+  - 전체 Job이 단 한 건의 오류로 멈춘다면 생산성·가용성이 크게 저하
+  - Fault-Tolerant를 통해 신뢰성(resilience)과 지속 가용성(availability) 확보
+- 설정 메서드
+  - faultTolerant()
+    - Skip/Retry/BackOff 등의 내결함성 옵션을 사용할 수 있도록 StepBuilder를 FaultTolerantStepBuilder로 전환한다.
+  - skip(Class<? extends Throwable> type)
+    - 지정한 예외 타입이 발생했을 때 해당 아이템을 건너뛰도록 등록한다.
+  - skipLimit(int)
+    - Skip 허용 최대 건수를 설정한다.
+    - 이 횟수를 초과하면 Step이 실패한다.
+  - skipPolicy(SkipPolicy)
+    - 사용자 정의 또는 기본 SkipPolicy를 등록할 수 있다.
+    - skipPolicy를 등록하면 복합 기준(예: 예외 타입 + 횟수)을 적용할 수 있다.
+  - noSkip(Class<? extends Throwable>)
+    - Skip 대상에서 제외할 예외 타입을 지정한다.
+  - retry(Class<? extends Throwable>)
+    - 지정한 예외 타입이 발생했을 때 재시도를 수행하도록 등록한다.
+  - retryLimit(int)
+    - Retry 허용 최대 횟수를 설정한다.
+    - 이 횟수를 초과하면 재시도를 중단한다.
+  - retryPolicy(RetryPolicy) 
+    - 사용자 정의 또는 기본 RetryPolicy를 등록할 수 있다.
+    - RetryPolicy를 등록하면 복합 기준(예: 예외 타입 + 횟수)을 적용할 수 있다.
+  - backOffPolicy(BackOffPolicy)
+    - 재시도 간격(고정/지수 등)을 조정하는 BackOff 정책을 등록한다.
+  - noRetry(Class<? extends Throwable> type)
+    - Retry 대상에서 제외할 예외 타입을 지정한다.
+  - noRollback(Class<? extends Throwable> type>)
+    - 지정한 예외 타입이 발생해도 트랜잭션을 롤백하지 않고 커밋된 데이터를 유지한다.
