@@ -36,7 +36,7 @@ import java.util.Collections;
        위 방식은 모두 Chunk 기반으로 동작한다.
  */
 @Slf4j
-@Configuration
+// @Configuration
 @AllArgsConstructor
 public class Ex04_PaymentReportConfig {
 
@@ -44,7 +44,7 @@ public class Ex04_PaymentReportConfig {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
 
-    @Bean
+    // @Bean
     public Job paymentReportJobEx04(
             Step paymentReportStepEx04
     ) {
@@ -54,7 +54,7 @@ public class Ex04_PaymentReportConfig {
                 .build();
     }
 
-    @Bean
+    // @Bean
     public Step paymentReportStepEx04(
             JpaPagingItemReader<PaymentSource> paymentReportReader
     ) {
@@ -66,8 +66,8 @@ public class Ex04_PaymentReportConfig {
                 .build();
     }
 
-    @Bean
-    @StepScope
+    // @Bean
+    // @StepScope
     public JpaPagingItemReader<PaymentSource> paymentReportReader(
             @Value("#{jobParameters['paymentDate']}") LocalDate paymentDate
     ) {
@@ -94,7 +94,7 @@ public class Ex04_PaymentReportConfig {
         };
     }
 
-    @Bean
+    // @Bean
     public JpaItemWriter<Payment> paymentReportWriter() {
         JpaItemWriter<Payment> writer = new JpaItemWriter<>();
         writer.setEntityManagerFactory(entityManagerFactory);
