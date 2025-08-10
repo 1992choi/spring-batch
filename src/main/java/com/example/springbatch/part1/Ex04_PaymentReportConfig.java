@@ -36,7 +36,7 @@ import java.util.Collections;
        위 방식은 모두 Chunk 기반으로 동작한다.
  */
 @Slf4j
-// @Configuration
+@Configuration
 @AllArgsConstructor
 public class Ex04_PaymentReportConfig {
 
@@ -44,61 +44,61 @@ public class Ex04_PaymentReportConfig {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
 
-    // @Bean
-    public Job paymentReportJobEx04(
-            Step paymentReportStepEx04
-    ) {
-        return new JobBuilder("paymentReportJobEx04", jobRepository)
-                .incrementer(new RunIdIncrementer())
-                .start(paymentReportStepEx04)
-                .build();
-    }
-
-    // @Bean
-    public Step paymentReportStepEx04(
-            JpaPagingItemReader<PaymentSource> paymentReportReader
-    ) {
-        return new StepBuilder("paymentReportStepEx04", jobRepository)
-                .<PaymentSource, Payment>chunk(10, transactionManager)
-                .reader(paymentReportReader)
-                .processor(paymentReportProcessor())
-                .writer(paymentReportWriter())
-                .build();
-    }
-
-    // @Bean
-    // @StepScope
-    public JpaPagingItemReader<PaymentSource> paymentReportReader(
-            @Value("#{jobParameters['paymentDate']}") LocalDate paymentDate
-    ) {
-        return new JpaPagingItemReaderBuilder<PaymentSource>()
-                .name("paymentSourceItemReader")
-                .entityManagerFactory(entityManagerFactory)
-                .queryString("SELECT ps FROM PaymentSource ps WHERE ps.paymentDate = :paymentDate")
-                .parameterValues(Collections.singletonMap("paymentDate", paymentDate))
-                .pageSize(10)
-                .build();
-    }
-
-    private ItemProcessor<PaymentSource, Payment> paymentReportProcessor() {
-        return paymentSource -> {
-            if (paymentSource.getFinalAmount().compareTo(BigDecimal.ZERO) == 0) {
-                return null; // ItemProcessor에서 null로 반환되면 writer에는 해당 데이터가 전달되지 않는다. (필터링 개념)
-            }
-            return new Payment(
-                    null,
-                    paymentSource.getFinalAmount(),
-                    paymentSource.getPaymentDate(),
-                    "PAYMENT"
-            );
-        };
-    }
-
-    // @Bean
-    public JpaItemWriter<Payment> paymentReportWriter() {
-        JpaItemWriter<Payment> writer = new JpaItemWriter<>();
-        writer.setEntityManagerFactory(entityManagerFactory);
-        return writer;
-    }
+//    @Bean
+//    public Job paymentReportJobEx04(
+//            Step paymentReportStepEx04
+//    ) {
+//        return new JobBuilder("paymentReportJobEx04", jobRepository)
+//                .incrementer(new RunIdIncrementer())
+//                .start(paymentReportStepEx04)
+//                .build();
+//    }
+//
+//    @Bean
+//    public Step paymentReportStepEx04(
+//            JpaPagingItemReader<PaymentSource> paymentReportReader
+//    ) {
+//        return new StepBuilder("paymentReportStepEx04", jobRepository)
+//                .<PaymentSource, Payment>chunk(10, transactionManager)
+//                .reader(paymentReportReader)
+//                .processor(paymentReportProcessor())
+//                .writer(paymentReportWriter())
+//                .build();
+//    }
+//
+//    @Bean
+//    @StepScope
+//    public JpaPagingItemReader<PaymentSource> paymentReportReader(
+//            @Value("#{jobParameters['paymentDate']}") LocalDate paymentDate
+//    ) {
+//        return new JpaPagingItemReaderBuilder<PaymentSource>()
+//                .name("paymentSourceItemReader")
+//                .entityManagerFactory(entityManagerFactory)
+//                .queryString("SELECT ps FROM PaymentSource ps WHERE ps.paymentDate = :paymentDate")
+//                .parameterValues(Collections.singletonMap("paymentDate", paymentDate))
+//                .pageSize(10)
+//                .build();
+//    }
+//
+//    private ItemProcessor<PaymentSource, Payment> paymentReportProcessor() {
+//        return paymentSource -> {
+//            if (paymentSource.getFinalAmount().compareTo(BigDecimal.ZERO) == 0) {
+//                return null; // ItemProcessor에서 null로 반환되면 writer에는 해당 데이터가 전달되지 않는다. (필터링 개념)
+//            }
+//            return new Payment(
+//                    null,
+//                    paymentSource.getFinalAmount(),
+//                    paymentSource.getPaymentDate(),
+//                    "PAYMENT"
+//            );
+//        };
+//    }
+//
+//    @Bean
+//    public JpaItemWriter<Payment> paymentReportWriter() {
+//        JpaItemWriter<Payment> writer = new JpaItemWriter<>();
+//        writer.setEntityManagerFactory(entityManagerFactory);
+//        return writer;
+//    }
 
 }
