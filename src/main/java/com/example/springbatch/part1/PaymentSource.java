@@ -22,6 +22,9 @@ public class PaymentSource {
     @Column(nullable = false, length = 100)
     private String partnerCorpName;
 
+    @Column(nullable = false, length = 100)
+    private String partnerBusinessRegistrationNumber;
+
     // 원래 금액
     @Column(nullable = false)
     private BigDecimal originalAmount;
