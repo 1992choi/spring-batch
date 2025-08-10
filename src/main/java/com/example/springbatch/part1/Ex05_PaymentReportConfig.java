@@ -40,7 +40,7 @@ public class Ex05_PaymentReportConfig {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
 
-    @Bean
+    // @Bean
     public Job paymentReportJobEx05(
             Step paymentReportStepEx05
     ) {
@@ -50,7 +50,7 @@ public class Ex05_PaymentReportConfig {
                 .build();
     }
 
-    @Bean
+    // @Bean
     public Step paymentReportStepEx05(
             JpaPagingItemReader<PaymentSource> paymentReportReader
     ) {
@@ -82,8 +82,8 @@ public class Ex05_PaymentReportConfig {
                 .build();
     }
 
-    @Bean
-    @StepScope
+    // @Bean
+    // @StepScope
     public JpaPagingItemReader<PaymentSource> paymentReportReader(
             @Value("#{jobParameters['paymentDate']}") LocalDate paymentDate
     ) {
@@ -118,7 +118,7 @@ public class Ex05_PaymentReportConfig {
         };
     }
 
-    @Bean
+    // @Bean
     public ItemWriter<Payment> paymentReportWriter() {
         return chunk -> {
             for (Payment payment : chunk) {
