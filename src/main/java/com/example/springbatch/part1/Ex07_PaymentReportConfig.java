@@ -57,6 +57,7 @@ public class Ex07_PaymentReportConfig {
     ) {
         return new StepBuilder("paymentReportStepEx07", jobRepository)
                 .<PaymentSource, Payment>chunk(10, transactionManager)
+                .listener(new StepDurationTrackerListener()) // listener 등록
                 .reader(paymentReportReader)
                 .processor(paymentReportProcessor())
                 .writer(paymentReportWriter())
