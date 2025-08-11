@@ -251,3 +251,18 @@
   - CompositeRetryPolicy
     - 여러 RetryPolicy를 조합하여, 예외 종류나 상황에 따라 순차적으로 정책을 적용
     - 복잡한 운영 환경에서 정교한 장애 대응 시나리오로 확장하기에 적합하다.
+
+### Listener
+- Listener란?
+  - Listener는 배치 실행 과정에서 발생하는 특정 이벤트 시점에 개입해서 추가 로직을 실행할 수 있도록 도와주는 콜백(Callback) 역할을 한다.
+- 종류
+  - JobExecutionListener 
+    - Job 단위 실행 전후 동작 정의 
+    - Ex) 로그 기록, 실행 시간 측정, 리소스 초기화/정리 
+  - StepExecutionListener 
+    - Step 단위 실행 전후 동작 정의 
+    - Ex) Step별 파라미터 세팅, 상태 체크 
+  - ItemReadListener / ItemProcessListener / ItemWriteListener 
+    - Chunk 기반 처리 시 각 단계(읽기, 처리, 쓰기) 전후 및 오류 시 동작 정의 
+    - Ex) 특정 데이터 로깅, 실패 데이터 저장
+
