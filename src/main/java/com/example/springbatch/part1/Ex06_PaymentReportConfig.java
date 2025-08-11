@@ -42,78 +42,78 @@ public class Ex06_PaymentReportConfig {
     private final PlatformTransactionManager transactionManager;
     private final PartnerCorporationService partnerCorporationService;
 
-    @Bean
-    public Job paymentReportJobEx06(
-            Step paymentReportStepEx06
-    ) {
-        return new JobBuilder("paymentReportJobEx06", jobRepository)
-                .incrementer(new RunIdIncrementer())
-                .start(paymentReportStepEx06)
-                .build();
-    }
-
-    @Bean
-    public Step paymentReportStepEx06(
-            JpaPagingItemReader<PaymentSource> paymentReportReader
-    ) {
-        return new StepBuilder("paymentReportStepEx06", jobRepository)
-                .<PaymentSource, Payment>chunk(10, transactionManager)
-                .reader(paymentReportReader)
-                .processor(paymentReportProcessor())
-                .writer(paymentReportWriter())
-                .faultTolerant()
-                .retry(PartnerHttpException.class)
-                .retryLimit(10)
-                .retryPolicy(new TimeoutRetryPolicy(1000L))
-//                .retryPolicy(new SimpleRetryPolicy(
-//                        10,
-//                        new BinaryExceptionClassifier(Collections.singletonMap(PartnerHttpException.class, Boolean.TRUE))
-//                ))
-//                .retryPolicy(new NeverRetryPolicy())
-//                .retryPolicy(new AlwaysRetryPolicy())
-//                .retryPolicy(new CompositeRetryPolicy())
-                .noRollback(InvalidPaymentAmountException.class)
-                .build();
-    }
-
-    @Bean
-    @StepScope
-    public JpaPagingItemReader<PaymentSource> paymentReportReader(
-            @Value("#{jobParameters['paymentDate']}") LocalDate paymentDate
-    ) {
-        return new JpaPagingItemReaderBuilder<PaymentSource>()
-                .name("paymentSourceItemReader")
-                .entityManagerFactory(entityManagerFactory)
-                .queryString("SELECT ps FROM PaymentSource ps WHERE ps.paymentDate = :paymentDate")
-                .parameterValues(Collections.singletonMap("paymentDate", paymentDate))
-                .pageSize(10)
-                .build();
-    }
-
-    private ItemProcessor<PaymentSource, Payment> paymentReportProcessor() {
-        return paymentSource -> {
-
-            final String partnerCorpName = partnerCorporationService.getPartnerCorpName(paymentSource.getPartnerBusinessRegistrationNumber());
-            final Payment payment = new Payment(
-                    null,
-                    paymentSource.getFinalAmount(),
-                    paymentSource.getPaymentDate(),
-                    partnerCorpName,
-                    "PAYMENT"
-            );
-
-            log.info("Processor payment: {}", payment);
-            return payment;
-        };
-    }
-
-    @Bean
-    public ItemWriter<Payment> paymentReportWriter() {
-        return chunk -> {
-            for (Payment payment : chunk) {
-                log.info("Writer payment: {}", payment);
-            }
-        };
-    }
+//    @Bean
+//    public Job paymentReportJobEx06(
+//            Step paymentReportStepEx06
+//    ) {
+//        return new JobBuilder("paymentReportJobEx06", jobRepository)
+//                .incrementer(new RunIdIncrementer())
+//                .start(paymentReportStepEx06)
+//                .build();
+//    }
+//
+//    @Bean
+//    public Step paymentReportStepEx06(
+//            JpaPagingItemReader<PaymentSource> paymentReportReader
+//    ) {
+//        return new StepBuilder("paymentReportStepEx06", jobRepository)
+//                .<PaymentSource, Payment>chunk(10, transactionManager)
+//                .reader(paymentReportReader)
+//                .processor(paymentReportProcessor())
+//                .writer(paymentReportWriter())
+//                .faultTolerant()
+//                .retry(PartnerHttpException.class)
+//                .retryLimit(10)
+//                .retryPolicy(new TimeoutRetryPolicy(1000L))
+////                .retryPolicy(new SimpleRetryPolicy(
+////                        10,
+////                        new BinaryExceptionClassifier(Collections.singletonMap(PartnerHttpException.class, Boolean.TRUE))
+////                ))
+////                .retryPolicy(new NeverRetryPolicy())
+////                .retryPolicy(new AlwaysRetryPolicy())
+////                .retryPolicy(new CompositeRetryPolicy())
+//                .noRollback(InvalidPaymentAmountException.class)
+//                .build();
+//    }
+//
+//    @Bean
+//    @StepScope
+//    public JpaPagingItemReader<PaymentSource> paymentReportReader(
+//            @Value("#{jobParameters['paymentDate']}") LocalDate paymentDate
+//    ) {
+//        return new JpaPagingItemReaderBuilder<PaymentSource>()
+//                .name("paymentSourceItemReader")
+//                .entityManagerFactory(entityManagerFactory)
+//                .queryString("SELECT ps FROM PaymentSource ps WHERE ps.paymentDate = :paymentDate")
+//                .parameterValues(Collections.singletonMap("paymentDate", paymentDate))
+//                .pageSize(10)
+//                .build();
+//    }
+//
+//    private ItemProcessor<PaymentSource, Payment> paymentReportProcessor() {
+//        return paymentSource -> {
+//
+//            final String partnerCorpName = partnerCorporationService.getPartnerCorpName(paymentSource.getPartnerBusinessRegistrationNumber());
+//            final Payment payment = new Payment(
+//                    null,
+//                    paymentSource.getFinalAmount(),
+//                    paymentSource.getPaymentDate(),
+//                    partnerCorpName,
+//                    "PAYMENT"
+//            );
+//
+//            log.info("Processor payment: {}", payment);
+//            return payment;
+//        };
+//    }
+//
+//    @Bean
+//    public ItemWriter<Payment> paymentReportWriter() {
+//        return chunk -> {
+//            for (Payment payment : chunk) {
+//                log.info("Writer payment: {}", payment);
+//            }
+//        };
+//    }
 
 }
