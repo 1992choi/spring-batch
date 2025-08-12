@@ -61,6 +61,16 @@ public class Ex07_PaymentReportConfig {
                 .reader(paymentReportReader)
                 .processor(paymentReportProcessor())
                 .writer(paymentReportWriter())
+                /*
+                    ChunkListener 등록
+                    ItemReadListener 등록
+                    ItemProcessListener 등록
+                    ItemWriteListener 등록
+                 */
+                .listener(new SampleChunkListener())
+                .listener(new SampleItemReadListener())
+                .listener(new SampleItemProcessListener())
+                .listener(new SampleItemWriterListener())
                 .build();
     }
 
