@@ -8,7 +8,7 @@ import org.springframework.batch.core.StepExecutionListener;
 import java.time.LocalDateTime;
 
 @Slf4j
-public class StepDurationTrackerListener implements StepExecutionListener {
+public class Ex07_StepDurationTrackerListener implements StepExecutionListener {
 
     @Override
     public void beforeStep(StepExecution stepExecution) {

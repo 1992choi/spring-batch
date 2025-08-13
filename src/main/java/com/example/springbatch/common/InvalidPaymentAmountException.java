@@ -1,4 +1,4 @@
-package com.example.springbatch.part1;
+package com.example.springbatch.common;
 
 public class InvalidPaymentAmountException extends RuntimeException {
 

@@ -5,7 +5,7 @@ import org.springframework.batch.core.ChunkListener;
 import org.springframework.batch.core.scope.context.ChunkContext;
 
 @Slf4j
-public class SampleChunkListener implements ChunkListener {
+public class Ex07_SampleChunkListener implements ChunkListener {
 
     @Override
     public void beforeChunk(ChunkContext context) {
