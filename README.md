@@ -52,6 +52,30 @@
     - ItemWriter
       - 가공된 아이템을 저장하거나 전송
 
+### Spring Batch 관련 테이블
+- BATCH_JOB_INSTANCE
+  - 하나의 Job 이름과 파라미터 조합에 해당하는 고유 인스턴스를 저장
+  - JOB_NAME, JOB_KEY로 유니크 제약이 걸려 있음
+- BATCH_JOB_EXECUTION
+  - 특정 Job 인스턴스의 실행 이력
+  - 시작 시간, 종료 시간, 상태, 종료 코드와 메시지 등을 기록
+  - BATCH_JOB_INSTANCE와 FK 관계
+- BATCH_JOB_EXECUTION_PARAMS
+  - Job 실행 시 전달된 파라미터 목록
+  - 타입(PARAMETER_TYPE)과 값(PARAMETER_VALUE) 저장
+- BATCH_STEP_EXECUTION
+  - 각 Job Execution 안의 Step 실행 이력
+  - 읽은 건수, 쓴 건수, 스킵 건수, 롤백 건수 등 배치 처리 지표 저장
+  - BATCH_JOB_EXECUTION과 FK 관계
+- BATCH_STEP_EXECUTION_CONTEXT
+  - Step 실행 시의 ExecutionContext 직렬화 데이터 저장
+  - 재시작 시 상태 복구에 사용
+- BATCH_JOB_EXECUTION_CONTEXT
+  - Job 실행 시의 ExecutionContext 저장
+- BATCH_STEP_EXECUTION_SEQ / BATCH_JOB_EXECUTION_SEQ / BATCH_JOB_SEQ
+  - MySQL 환경에서 시퀀스 값 관리용 테이블
+  - Oracle에서는 시퀀스를 사용하지만 MySQL은 시퀀스 객체가 없으므로 이 테이블로 PK 증가값 관리
+
 ### Job
 - Job은 Spring Batch에서 배치 처리의 최상위 단위이다.
 - Spring Batch에서 Job은 구성(configuration)과 실행(execution) 두 역할을 동시에 수행한다.
