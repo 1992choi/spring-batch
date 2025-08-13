@@ -1,4 +1,4 @@
-package com.example.springbatch.common;
+package com.example.springbatch.common.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

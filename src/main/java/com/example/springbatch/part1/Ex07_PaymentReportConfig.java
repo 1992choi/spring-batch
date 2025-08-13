@@ -1,8 +1,9 @@
 package com.example.springbatch.part1;
 
-import com.example.springbatch.common.JobDurationTrackerListener;
-import com.example.springbatch.common.Payment;
-import com.example.springbatch.common.PaymentSource;
+import com.example.springbatch.common.listener.JobDurationTrackerListener;
+import com.example.springbatch.common.entity.Payment;
+import com.example.springbatch.common.entity.PaymentSource;
+import com.example.springbatch.common.listener.*;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,7 +60,7 @@ public class Ex07_PaymentReportConfig {
     ) {
         return new StepBuilder("paymentReportStepEx07", jobRepository)
                 .<PaymentSource, Payment>chunk(10, transactionManager)
-                .listener(new Ex07_StepDurationTrackerListener()) // listener 등록
+                .listener(new StepDurationTrackerListener()) // listener 등록
                 .reader(paymentReportReader)
                 .processor(paymentReportProcessor())
                 .writer(paymentReportWriter())
@@ -69,10 +70,10 @@ public class Ex07_PaymentReportConfig {
                     ItemProcessListener 등록
                     ItemWriteListener 등록
                  */
-                .listener(new Ex07_SampleChunkListener())
-                .listener(new Ex07_SampleItemReadListener())
-                .listener(new Ex07_SampleItemProcessListener())
-                .listener(new Ex07_SampleItemWriterListener())
+                .listener(new SampleChunkListener())
+                .listener(new SampleItemReadListener())
+                .listener(new SampleItemProcessListener())
+                .listener(new SampleItemWriterListener())
                 .build();
     }
 

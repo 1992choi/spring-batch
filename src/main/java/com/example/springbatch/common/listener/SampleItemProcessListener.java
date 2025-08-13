@@ -1,12 +1,12 @@
-package com.example.springbatch.part1;
+package com.example.springbatch.common.listener;
 
-import com.example.springbatch.common.Payment;
-import com.example.springbatch.common.PaymentSource;
+import com.example.springbatch.common.entity.Payment;
+import com.example.springbatch.common.entity.PaymentSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.ItemProcessListener;
 
 @Slf4j
-public class Ex07_SampleItemProcessListener implements ItemProcessListener<PaymentSource, Payment> {
+public class SampleItemProcessListener implements ItemProcessListener<PaymentSource, Payment> {
 
     @Override
     public void beforeProcess(PaymentSource item) {

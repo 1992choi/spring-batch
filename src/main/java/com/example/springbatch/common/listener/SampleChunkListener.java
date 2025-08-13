@@ -1,11 +1,11 @@
-package com.example.springbatch.part1;
+package com.example.springbatch.common.listener;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.ChunkListener;
 import org.springframework.batch.core.scope.context.ChunkContext;
 
 @Slf4j
-public class Ex07_SampleChunkListener implements ChunkListener {
+public class SampleChunkListener implements ChunkListener {
 
     @Override
     public void beforeChunk(ChunkContext context) {

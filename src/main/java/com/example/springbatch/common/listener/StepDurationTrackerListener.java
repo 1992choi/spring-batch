@@ -1,4 +1,4 @@
-package com.example.springbatch.part1;
+package com.example.springbatch.common.listener;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.ExitStatus;
@@ -8,7 +8,7 @@ import org.springframework.batch.core.StepExecutionListener;
 import java.time.LocalDateTime;
 
 @Slf4j
-public class Ex07_StepDurationTrackerListener implements StepExecutionListener {
+public class StepDurationTrackerListener implements StepExecutionListener {
 
     @Override
     public void beforeStep(StepExecution stepExecution) {
