@@ -43,76 +43,76 @@ public class Ex07_PaymentReportConfig {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
 
-    @Bean
-    public Job paymentReportJobEx06(
-            Step paymentReportStepEx06
-    ) {
-        return new JobBuilder("paymentReportJobEx07", jobRepository)
-                .incrementer(new RunIdIncrementer())
-                .listener(new JobDurationTrackerListener()) // listener 등록
-                .start(paymentReportStepEx06)
-                .build();
-    }
-
-    @Bean
-    public Step paymentReportStepEx06(
-            JpaPagingItemReader<PaymentSource> paymentReportReader
-    ) {
-        return new StepBuilder("paymentReportStepEx07", jobRepository)
-                .<PaymentSource, Payment>chunk(10, transactionManager)
-                .listener(new StepDurationTrackerListener()) // listener 등록
-                .reader(paymentReportReader)
-                .processor(paymentReportProcessor())
-                .writer(paymentReportWriter())
-                /*
-                    ChunkListener 등록
-                    ItemReadListener 등록
-                    ItemProcessListener 등록
-                    ItemWriteListener 등록
-                 */
-                .listener(new SampleChunkListener())
-                .listener(new SampleItemReadListener())
-                .listener(new SampleItemProcessListener())
-                .listener(new SampleItemWriterListener())
-                .build();
-    }
-
-    @Bean
-    @StepScope
-    public JpaPagingItemReader<PaymentSource> paymentReportReader(
-            @Value("#{jobParameters['paymentDate']}") LocalDate paymentDate
-    ) {
-        return new JpaPagingItemReaderBuilder<PaymentSource>()
-                .name("paymentSourceItemReader")
-                .entityManagerFactory(entityManagerFactory)
-                .queryString("SELECT ps FROM PaymentSource ps WHERE ps.paymentDate = :paymentDate")
-                .parameterValues(Collections.singletonMap("paymentDate", paymentDate))
-                .pageSize(10)
-                .build();
-    }
-
-    private ItemProcessor<PaymentSource, Payment> paymentReportProcessor() {
-        return paymentSource -> {
-            final Payment payment = new Payment(
-                    null,
-                    paymentSource.getFinalAmount(),
-                    paymentSource.getPaymentDate(),
-                    "partnerCorpName",
-                    "PAYMENT"
-            );
-
-            log.info("Processor payment: {}", payment);
-            return payment;
-        };
-    }
-
-    @Bean
-    public ItemWriter<Payment> paymentReportWriter() {
-        return chunk -> {
-            for (Payment payment : chunk) {
-                log.info("Writer payment: {}", payment);
-            }
-        };
-    }
+//    @Bean
+//    public Job paymentReportJobEx07(
+//            Step paymentReportStepEx07
+//    ) {
+//        return new JobBuilder("paymentReportJobEx07", jobRepository)
+//                .incrementer(new RunIdIncrementer())
+//                .listener(new JobDurationTrackerListener()) // listener 등록
+//                .start(paymentReportStepEx07)
+//                .build();
+//    }
+//
+//    @Bean
+//    public Step paymentReportStepEx07(
+//            JpaPagingItemReader<PaymentSource> paymentReportReader
+//    ) {
+//        return new StepBuilder("paymentReportStepEx07", jobRepository)
+//                .<PaymentSource, Payment>chunk(10, transactionManager)
+//                .listener(new StepDurationTrackerListener()) // listener 등록
+//                .reader(paymentReportReader)
+//                .processor(paymentReportProcessor())
+//                .writer(paymentReportWriter())
+//                /*
+//                    ChunkListener 등록
+//                    ItemReadListener 등록
+//                    ItemProcessListener 등록
+//                    ItemWriteListener 등록
+//                 */
+//                .listener(new SampleChunkListener())
+//                .listener(new SampleItemReadListener())
+//                .listener(new SampleItemProcessListener())
+//                .listener(new SampleItemWriterListener())
+//                .build();
+//    }
+//
+//    @Bean
+//    @StepScope
+//    public JpaPagingItemReader<PaymentSource> paymentReportReader(
+//            @Value("#{jobParameters['paymentDate']}") LocalDate paymentDate
+//    ) {
+//        return new JpaPagingItemReaderBuilder<PaymentSource>()
+//                .name("paymentSourceItemReader")
+//                .entityManagerFactory(entityManagerFactory)
+//                .queryString("SELECT ps FROM PaymentSource ps WHERE ps.paymentDate = :paymentDate")
+//                .parameterValues(Collections.singletonMap("paymentDate", paymentDate))
+//                .pageSize(10)
+//                .build();
+//    }
+//
+//    private ItemProcessor<PaymentSource, Payment> paymentReportProcessor() {
+//        return paymentSource -> {
+//            final Payment payment = new Payment(
+//                    null,
+//                    paymentSource.getFinalAmount(),
+//                    paymentSource.getPaymentDate(),
+//                    "partnerCorpName",
+//                    "PAYMENT"
+//            );
+//
+//            log.info("Processor payment: {}", payment);
+//            return payment;
+//        };
+//    }
+//
+//    @Bean
+//    public ItemWriter<Payment> paymentReportWriter() {
+//        return chunk -> {
+//            for (Payment payment : chunk) {
+//                log.info("Writer payment: {}", payment);
+//            }
+//        };
+//    }
 
 }
