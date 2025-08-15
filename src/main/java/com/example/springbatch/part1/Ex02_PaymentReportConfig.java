@@ -33,72 +33,72 @@ import java.util.List;
 @AllArgsConstructor
 public class Ex02_PaymentReportConfig {
 
-    @Bean
-    public Job paymentReportJob(
-            JobRepository jobRepository,
-            Step paymentReportStep
-    ) {
-        return new JobBuilder("paymentReportJob", jobRepository)
-                // .incrementer(new RunIdIncrementer())
-                .start(paymentReportStep)
-                .build();
-    }
-
-
-    @Bean
-    @JobScope
-    public Step paymentReportStep(
-            JobRepository jobRepository,
-            ItemReader<BigDecimal> paymentItemReader,
-            ItemWriter<BigDecimal> paymentItemWriter,
-            PlatformTransactionManager transactionManager
-    ) {
-        return new StepBuilder("paymentReportStep", jobRepository)
-                .<BigDecimal, BigDecimal>chunk(5, transactionManager)
-                .reader(paymentItemReader)
-                .writer(paymentItemWriter)
-                .build();
-    }
-
-    @Bean
-    @StepScope
-    public ItemReader<BigDecimal> paymentItemReader(
-            @Value("#{jobParameters['targetDate']}") String targetDate
-    ) {
-        System.out.println("Reader targetDate: " + targetDate);
-        return new ListItemReader<>(getPayments());
-    }
-
-    @Bean
-    @StepScope
-    public ItemWriter<BigDecimal> paymentItemWriter(
-            @Value("#{jobParameters['targetDate']}") String targetDateStr
-    ) {
-        return items -> {
-            System.out.println("targetDate: " + targetDateStr);
-            items.forEach(item -> {
-                System.out.println("Payment: " + item);
-            });
-        };
-    }
-
-    private List<BigDecimal> getPayments() {
-        return List.of(
-                BigDecimal.valueOf(100),
-                BigDecimal.valueOf(200),
-                BigDecimal.valueOf(300),
-                BigDecimal.valueOf(400),
-                BigDecimal.valueOf(500),
-                BigDecimal.valueOf(600),
-                BigDecimal.valueOf(700),
-                BigDecimal.valueOf(800),
-                BigDecimal.valueOf(900),
-                BigDecimal.valueOf(1000),
-                BigDecimal.valueOf(1100),
-                BigDecimal.valueOf(1200),
-                BigDecimal.valueOf(1300),
-                BigDecimal.valueOf(1400)
-        );
-    }
+//    @Bean
+//    public Job paymentReportJob(
+//            JobRepository jobRepository,
+//            Step paymentReportStep
+//    ) {
+//        return new JobBuilder("paymentReportJob", jobRepository)
+//                // .incrementer(new RunIdIncrementer())
+//                .start(paymentReportStep)
+//                .build();
+//    }
+//
+//
+//    @Bean
+//    @JobScope
+//    public Step paymentReportStep(
+//            JobRepository jobRepository,
+//            ItemReader<BigDecimal> paymentItemReader,
+//            ItemWriter<BigDecimal> paymentItemWriter,
+//            PlatformTransactionManager transactionManager
+//    ) {
+//        return new StepBuilder("paymentReportStep", jobRepository)
+//                .<BigDecimal, BigDecimal>chunk(5, transactionManager)
+//                .reader(paymentItemReader)
+//                .writer(paymentItemWriter)
+//                .build();
+//    }
+//
+//    @Bean
+//    @StepScope
+//    public ItemReader<BigDecimal> paymentItemReader(
+//            @Value("#{jobParameters['targetDate']}") String targetDate
+//    ) {
+//        System.out.println("Reader targetDate: " + targetDate);
+//        return new ListItemReader<>(getPayments());
+//    }
+//
+//    @Bean
+//    @StepScope
+//    public ItemWriter<BigDecimal> paymentItemWriter(
+//            @Value("#{jobParameters['targetDate']}") String targetDateStr
+//    ) {
+//        return items -> {
+//            System.out.println("targetDate: " + targetDateStr);
+//            items.forEach(item -> {
+//                System.out.println("Payment: " + item);
+//            });
+//        };
+//    }
+//
+//    private List<BigDecimal> getPayments() {
+//        return List.of(
+//                BigDecimal.valueOf(100),
+//                BigDecimal.valueOf(200),
+//                BigDecimal.valueOf(300),
+//                BigDecimal.valueOf(400),
+//                BigDecimal.valueOf(500),
+//                BigDecimal.valueOf(600),
+//                BigDecimal.valueOf(700),
+//                BigDecimal.valueOf(800),
+//                BigDecimal.valueOf(900),
+//                BigDecimal.valueOf(1000),
+//                BigDecimal.valueOf(1100),
+//                BigDecimal.valueOf(1200),
+//                BigDecimal.valueOf(1300),
+//                BigDecimal.valueOf(1400)
+//        );
+//    }
 
 }
