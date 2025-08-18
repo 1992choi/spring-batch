@@ -52,60 +52,60 @@ public class Ex12_UserGradleApplyJobConfiguration {
     private final OrderClient orderClient;
     private final int chunkSize = 1_000;
 
-    @Bean
-    public Job userGradleApplyJob(
-            Step userGradleApplyStep
-    ) {
-        return new JobBuilder("userGradleApplyJob", jobRepository)
-                .incrementer(new RunIdIncrementer())
-                .start(userGradleApplyStep)
-                .build();
-    }
-
-    @Bean
-    public Step userGradleApplyStep(
-            JpaCursorItemReader<User> cursorItemReader,
-            ItemWriter<User> writer
-    ) {
-        return new StepBuilder("userGradleApplyStep", jobRepository)
-                .<User, User>chunk(chunkSize, transactionManager)
-                .listener(new StepDurationTrackerListener())
-                .reader(cursorItemReader)
-                .writer(writer)
-                .listener(new ChunkDurationTrackerListener())
-                .build();
-    }
-
-    @Bean
-    @StepScope
-    public JpaCursorItemReader<User> cursorItemReader() {
-        return new JpaCursorItemReaderBuilder<User>()
-                .name("cursorItemReader")
-                .entityManagerFactory(entityManagerFactory)
-                .queryString("SELECT u FROM User u WHERE u.grade = 'INIT'")
-                .build();
-    }
-
-    @Bean
-    public ItemWriter<User> writer() {
-        return users -> {
-            var appliedGradeUsers = Flowable.fromIterable(users.getItems())
-                    .parallel()
-                    .runOn(Schedulers.io())
-                    .map(user -> {
-                        final var grade = orderClient.getGrade(user.getId());
-                        user.setGrade(grade);
-                        return user;
-                    })
-                    .sequential()
-                    .toList()
-                    .blockingGet();
-
-            new JpaItemWriterBuilder<User>()
-                    .entityManagerFactory(entityManagerFactory)
-                    .build()
-                    .write(new Chunk<>(appliedGradeUsers));
-        };
-    }
+//    @Bean
+//    public Job userGradleApplyJob(
+//            Step userGradleApplyStep
+//    ) {
+//        return new JobBuilder("userGradleApplyJob", jobRepository)
+//                .incrementer(new RunIdIncrementer())
+//                .start(userGradleApplyStep)
+//                .build();
+//    }
+//
+//    @Bean
+//    public Step userGradleApplyStep(
+//            JpaCursorItemReader<User> cursorItemReader,
+//            ItemWriter<User> writer
+//    ) {
+//        return new StepBuilder("userGradleApplyStep", jobRepository)
+//                .<User, User>chunk(chunkSize, transactionManager)
+//                .listener(new StepDurationTrackerListener())
+//                .reader(cursorItemReader)
+//                .writer(writer)
+//                .listener(new ChunkDurationTrackerListener())
+//                .build();
+//    }
+//
+//    @Bean
+//    @StepScope
+//    public JpaCursorItemReader<User> cursorItemReader() {
+//        return new JpaCursorItemReaderBuilder<User>()
+//                .name("cursorItemReader")
+//                .entityManagerFactory(entityManagerFactory)
+//                .queryString("SELECT u FROM User u WHERE u.grade = 'INIT'")
+//                .build();
+//    }
+//
+//    @Bean
+//    public ItemWriter<User> writer() {
+//        return users -> {
+//            var appliedGradeUsers = Flowable.fromIterable(users.getItems())
+//                    .parallel()
+//                    .runOn(Schedulers.io())
+//                    .map(user -> {
+//                        final var grade = orderClient.getGrade(user.getId());
+//                        user.setGrade(grade);
+//                        return user;
+//                    })
+//                    .sequential()
+//                    .toList()
+//                    .blockingGet();
+//
+//            new JpaItemWriterBuilder<User>()
+//                    .entityManagerFactory(entityManagerFactory)
+//                    .build()
+//                    .write(new Chunk<>(appliedGradeUsers));
+//        };
+//    }
 
 }
