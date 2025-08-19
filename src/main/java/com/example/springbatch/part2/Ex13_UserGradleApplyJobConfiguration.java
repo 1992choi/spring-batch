@@ -48,63 +48,63 @@ public class Ex13_UserGradleApplyJobConfiguration {
     private final UserRepository userRepository;
     private final int chunkSize = 1_000;
 
-    @Bean
-    public Job userGradleApplyJob(
-            Step userGradleApplyStep
-    ) {
-        return new JobBuilder("userGradleApplyJob", jobRepository)
-                .incrementer(new RunIdIncrementer())
-                .start(userGradleApplyStep)
-                .build();
-    }
-
-    @Bean
-    public Step userGradleApplyStep(
-            JpaCursorItemReader<User> cursorItemReader,
-            ItemWriter<User> writer
-    ) {
-        return new StepBuilder("userGradleApplyStep", jobRepository)
-                .<User, User>chunk(chunkSize, transactionManager)
-                .listener(new StepDurationTrackerListener())
-                .reader(cursorItemReader)
-                .writer(writer)
-                .listener(new ChunkDurationTrackerListener())
-                .build();
-    }
-
-    @Bean
-    @StepScope
-    public JpaCursorItemReader<User> cursorItemReader() {
-        return new JpaCursorItemReaderBuilder<User>()
-                .name("cursorItemReader")
-                .entityManagerFactory(entityManagerFactory)
-                .queryString("SELECT u FROM User u WHERE u.grade = 'INIT'")
-                .build();
-    }
-
-    @Bean
-    public ItemWriter<User> writer() {
-        return users -> {
-            var appliedGradeUsers = Flowable.fromIterable(users.getItems())
-                    .parallel()
-                    .runOn(Schedulers.io())
-                    .map(user -> {
-                        final var grade = orderClient.getGrade(user.getId());
-                        user.setGrade(grade);
-                        return user;
-                    })
-                    .sequential()
-                    .toList()
-                    .blockingGet();
-
-            appliedGradeUsers.stream()
-                    .collect(Collectors.groupingBy(User::getGrade))
-                    .forEach((grade, targetUsers) -> {
-                                final var userIds = targetUsers.stream().map(User::getId).toList();
-                                userRepository.updateGrade(grade, userIds);
-                            }
-                    );
-        };
-    }
+//    @Bean
+//    public Job userGradleApplyJob(
+//            Step userGradleApplyStep
+//    ) {
+//        return new JobBuilder("userGradleApplyJob", jobRepository)
+//                .incrementer(new RunIdIncrementer())
+//                .start(userGradleApplyStep)
+//                .build();
+//    }
+//
+//    @Bean
+//    public Step userGradleApplyStep(
+//            JpaCursorItemReader<User> cursorItemReader,
+//            ItemWriter<User> writer
+//    ) {
+//        return new StepBuilder("userGradleApplyStep", jobRepository)
+//                .<User, User>chunk(chunkSize, transactionManager)
+//                .listener(new StepDurationTrackerListener())
+//                .reader(cursorItemReader)
+//                .writer(writer)
+//                .listener(new ChunkDurationTrackerListener())
+//                .build();
+//    }
+//
+//    @Bean
+//    @StepScope
+//    public JpaCursorItemReader<User> cursorItemReader() {
+//        return new JpaCursorItemReaderBuilder<User>()
+//                .name("cursorItemReader")
+//                .entityManagerFactory(entityManagerFactory)
+//                .queryString("SELECT u FROM User u WHERE u.grade = 'INIT'")
+//                .build();
+//    }
+//
+//    @Bean
+//    public ItemWriter<User> writer() {
+//        return users -> {
+//            var appliedGradeUsers = Flowable.fromIterable(users.getItems())
+//                    .parallel()
+//                    .runOn(Schedulers.io())
+//                    .map(user -> {
+//                        final var grade = orderClient.getGrade(user.getId());
+//                        user.setGrade(grade);
+//                        return user;
+//                    })
+//                    .sequential()
+//                    .toList()
+//                    .blockingGet();
+//
+//            appliedGradeUsers.stream()
+//                    .collect(Collectors.groupingBy(User::getGrade))
+//                    .forEach((grade, targetUsers) -> {
+//                                final var userIds = targetUsers.stream().map(User::getId).toList();
+//                                userRepository.updateGrade(grade, userIds);
+//                            }
+//                    );
+//        };
+//    }
 
 }
