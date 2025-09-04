@@ -23,3 +23,8 @@ spring:
 logging:
   level:
     org.springframework.batch: INFO
+
+
+args:
+  clear-existing-data: true
+  payment-date: 2025-01-01

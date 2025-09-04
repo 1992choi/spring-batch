@@ -1,5 +1,7 @@
 package com.example.springbatch.part3;
 
+import com.example.springbatch.common.ArgumentProperties;
+import com.example.springbatch.common.ClearExistingDataJobListener;
 import com.example.springbatch.common.entity.PaymentDailyStatistics;
 import com.example.springbatch.common.listener.ChunkDurationTrackerListener;
 import com.example.springbatch.common.listener.StepDurationTrackerListener;
@@ -21,7 +23,6 @@ import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.database.JpaItemWriter;
 import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
 import org.springframework.batch.item.database.builder.JpaItemWriterBuilder;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -29,13 +30,10 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 /*
     - 실행방법
       - setup.sql에서 'Part 3 > Ch 1' 데이터 추가
-      - Program arguments에 아래 옵션 추가 후 Run
-      - --job.name=paymentStatisticsJob paymentDate=2025-01-01
 
     - 강의목적
        - 재처리가 가능한 배치 만들기
@@ -43,16 +41,23 @@ import java.time.LocalDate;
 
     - 첫번째 커밋
        - 결제 데이터를 통계내기 위하여 일별 집계 테이블에 데이터를 생성한다.
+       - 실행 : Program arguments에 옵션 추가 후 Run >>> --job.name=paymentStatisticsJob paymentDate=2025-01-01
+    - 두번째 커밋
+       - 첫번째 커밋 방식에는 문제점이 있다.
+         - 결제 데이터가 누락되어 데이터를 추가하고, 통계를 다시 맞춰달라는 요구사항이 있을 경우 대부분의 데이터가 중복으로 생성되는 문제가 발생한다.
+       - 이를 해결하는 가장 간단한 방법은 기존 데이터를 삭제하고 다시 저장하는 방식이다.
+       - 실행 : Program arguments에 옵션 추가 후 Run >>> --job.name=paymentStatisticsJob
  */
 @Slf4j
 @Configuration
 @AllArgsConstructor
 public class Ex15_PaymentStatisticsJobConfig {
-
     private final EntityManagerFactory entityManagerFactory;
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
     private final DataSource dataSource;
+    private final ArgumentProperties properties;
+    private final ClearExistingDataJobListener clearExistingDataJobListener;
 
     private final int chunkSize = 100;
 
@@ -63,6 +68,7 @@ public class Ex15_PaymentStatisticsJobConfig {
     public Job paymentStatisticsJob(Step paymentStatisticsStep) {
         return new JobBuilder("paymentStatisticsJob", jobRepository)
                 .incrementer(new RunIdIncrementer())
+                .listener(clearExistingDataJobListener)
                 .start(paymentStatisticsStep)
                 .build();
     }
@@ -90,14 +96,10 @@ public class Ex15_PaymentStatisticsJobConfig {
     /**
      * [Reader]
      * 특정 날짜의 결제 데이터를 사업자 번호 기준으로 합산하여 읽어옵니다.
-     *
-     * @param paymentDate Job Parameter로 실행 시점에 날짜를 전달받습니다. (형식: yyyy-MM-dd)
      */
     @Bean
     @StepScope
-    public JdbcCursorItemReader<PaymentStatisticsDailySum> paymentStatisticsReader(
-            @Value("#{jobParameters['paymentDate']}") LocalDate paymentDate
-    ) {
+    public JdbcCursorItemReader<PaymentStatisticsDailySum> paymentStatisticsReader() {
         // MySQL 기준 SQL 쿼리
         String sql = String.format("""
                 SELECT
@@ -108,7 +110,7 @@ public class Ex15_PaymentStatisticsJobConfig {
                 WHERE payment_date_time >= '%s 00:00:00'
                   AND payment_date_time < '%s 00:00:00'
                 GROUP BY business_registration_number, corp_name
-                """, paymentDate, paymentDate.plusDays(1));
+                """, properties.getPaymentDate(), properties.getPaymentDate().plusDays(1));
 
         return new JdbcCursorItemReaderBuilder<PaymentStatisticsDailySum>()
                 .name("paymentStatisticsReader")
@@ -126,15 +128,13 @@ public class Ex15_PaymentStatisticsJobConfig {
      * 이미 해당 날짜/사업자번호로 저장된 통계가 있다면 금액을 더하고, 없다면 새로 생성합니다. (UPSERT 로직)
      */
     @Bean
-    @StepScope
     public ItemProcessor<PaymentStatisticsDailySum, PaymentDailyStatistics> processor(
-            @Value("#{jobParameters['paymentDate']}") LocalDate paymentDate
     ) {
         return dto -> new PaymentDailyStatistics(
                 dto.corpName,
                 dto.businessRegistrationNumber,
                 dto.totalAmount,
-                paymentDate
+                properties.getPaymentDate()
         );
     }
 
