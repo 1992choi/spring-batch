@@ -1,0 +1,48 @@
+package com.example.springbatch.common.entity;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "payment_source_v2")
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+public class PaymentSourceV2 {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // 결제 상호명
+    @Column(nullable = false, length = 100)
+    private String corpName;
+
+    // 결제 사업자 번호
+    @Column(nullable = false, length = 100)
+    private String businessRegistrationNumber;
+
+    // 결제 금액
+    @Column(nullable = false)
+    private BigDecimal amount;
+
+    // 결제 일시
+    @Column(nullable = false)
+    private LocalDateTime paymentDateTime;
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+}
