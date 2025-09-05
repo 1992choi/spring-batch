@@ -9,11 +9,5 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
-public interface PaymentDailyStatisticsRepository extends JpaRepository<PaymentDailyStatistics, Long> {
-
-    @Transactional
-    @Modifying
-    @Query("delete from PaymentDailyStatistics p where p.paymentDate = :paymentDate")
-    int deleteByPaymentDate(@Param("paymentDate") LocalDate paymentDate);
-
+public interface PaymentDailyStatisticsRepository extends JpaRepository<PaymentDailyStatistics, Long>, PaymentDailyStatisticsRepositoryCustom {
 }

@@ -1,5 +1,6 @@
 package com.example.springbatch.common.entity;
 
+import com.example.springbatch.common.PaymentDailyStatisticsUniqueKey;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,7 +13,16 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "payment_daily_statistics")
+@Table(name = "payment_daily_statistics",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        columnNames = {
+                                "businessRegistrationNumber",
+                                "paymentDate"
+                        }
+                )
+        }
+)
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,11 +33,11 @@ public class PaymentDailyStatistics {
     private Long id;
 
     // 결제 상호명
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 100, updatable = false)
     private String corpName;
 
     // 결제 사업자 번호
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 100, updatable = false)
     private String businessRegistrationNumber;
 
     // 결제 금액
@@ -35,7 +45,7 @@ public class PaymentDailyStatistics {
     private BigDecimal amount;
 
     // 결제 일자
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private LocalDate paymentDate;
 
     @CreationTimestamp
@@ -51,6 +61,14 @@ public class PaymentDailyStatistics {
         this.businessRegistrationNumber = businessRegistrationNumber;
         this.amount = amount;
         this.paymentDate = paymentDate;
+    }
+
+    public void updateAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public PaymentDailyStatisticsUniqueKey toUniqueKey() {
+        return new PaymentDailyStatisticsUniqueKey(businessRegistrationNumber, paymentDate);
     }
 
 }

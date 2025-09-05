@@ -34,6 +34,19 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.batch:spring-batch-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // QueryDSL-JPA (읽기/조회용으로 필요할 수 있음)
+    implementation 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
+    annotationProcessor 'com.querydsl:querydsl-apt:5.1.0:jakarta'
+    annotationProcessor "jakarta.annotation:jakarta.annotation-api"
+    annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+
+    // QueryDSL-SQL (QuerydslBatchItemWriter에서 사용)
+    implementation 'com.querydsl:querydsl-sql:5.1.0'
+
+    // QueryDSL-SQL 코드 생성을 위한 의존성 (Annotation Processor가 아님)
+    // 이 의존성은 별도의 Gradle Task에서 사용됩니다.
+    implementation 'com.querydsl:querydsl-sql-codegen:5.1.0'
 }
 
 tasks.named('test') {

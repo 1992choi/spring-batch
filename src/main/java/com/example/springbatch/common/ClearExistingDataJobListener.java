@@ -18,7 +18,7 @@ public class ClearExistingDataJobListener implements JobExecutionListener {
     public void beforeJob(JobExecution jobExecution) {
         if (properties.getClearExistingData()) {
             log.info("paymentDate='{}'에 해당하는 기존 결제 통계 데이터 삭제를 시작합니다.", properties.getPaymentDate());
-            int deletedCount = paymentDailyStatisticsRepository.deleteByPaymentDate(properties.getPaymentDate());
+            Long deletedCount = paymentDailyStatisticsRepository.deleteByPaymentDate(properties.getPaymentDate());
             log.info("기존 결제 통계 데이터 {}건 삭제를 완료했습니다.", deletedCount);
         }
     }

@@ -1,15 +1,11 @@
 package com.example.springbatch.part3;
 
 import com.example.springbatch.common.ArgumentProperties;
-import com.example.springbatch.common.ClearExistingDataJobListener;
-import com.example.springbatch.common.entity.PaymentDailyStatistics;
+import com.example.springbatch.common.PaymentDailyStatisticsRecoveryService;
+import com.example.springbatch.common.PaymentStatisticsDailySum;
 import com.example.springbatch.common.listener.ChunkDurationTrackerListener;
 import com.example.springbatch.common.listener.StepDurationTrackerListener;
-import jakarta.persistence.EntityManagerFactory;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -18,22 +14,21 @@ import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
-import org.springframework.batch.item.database.JpaItemWriter;
 import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
-import org.springframework.batch.item.database.builder.JpaItemWriterBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
-import java.math.BigDecimal;
+import java.util.List;
 
 /*
     - 실행방법
-      - setup.sql에서 'Part 3 > Ch 1' 데이터 추가
+      - 첫번째 커밋 : setup.sql에서 'Part 3 > Ch 1' 데이터 추가
+      - 세번째 커밋 : setup.sql에서 'Part 3 > Ch 5 ~ 7' 데이터 추가
 
     - 강의목적
        - 재처리가 가능한 배치 만들기
@@ -47,17 +42,29 @@ import java.math.BigDecimal;
          - 결제 데이터가 누락되어 데이터를 추가하고, 통계를 다시 맞춰달라는 요구사항이 있을 경우 대부분의 데이터가 중복으로 생성되는 문제가 발생한다.
        - 이를 해결하는 가장 간단한 방법은 기존 데이터를 삭제하고 다시 저장하는 방식이다.
        - 실행 : Program arguments에 옵션 추가 후 Run >>> --job.name=paymentStatisticsJob
+    - 세번째 커밋
+       - 두번째 커밋 방식에는 문제점이 있다.
+         - 기존 데이터를 삭제하고 다시 저장하는 방식은 데이터양이 적을 때는 상관없지만 데이터양이 많을 때는 딜레이가 발생할 수도 있다.
+         - 이처럼 1건만 추가하기 위하여 특정 사업자의 특정일의 모든 데이터를 지우고 다시 실행하는건 비효율적일 수 있다.
+       - 이를 해결하기 위해서 재처리가 가능한 batch로 개선한다. (더욱 유연하게 변경)
+         - 결제 건이 누락되어서 기존 데이터에 누락된 만큼 합산하여 update 하는 케이스
+         - 합계된 데이터에 없는 사용자의 누락된 데이터가 추가되는 경우에는 insert 하는 케이스
+         - 누락된 데이터가 +100, -100과 같이 합산하면 0이 되므로 최종적으로는 데이터 변경이 없는 케이스
+       - 실행 : Program arguments에 옵션 추가 후 Run >>> --job.name=paymentStatisticsJob
+         - 처음 실행하면, 데이터가 없는 상태여서 '새로운 대상 저장: 2건'이 콘솔에 찍힘.
+         - 재실행하면, 데이터가 이미 있으며 변경사항이 없으므로 '기존 데이터와 amount 일치 (변경 없음)'이 콘솔에 찍힘
+         - setup.sql에 임의의 데이터를 추가하고 재실행하면, 이미 있는 데이터이지만 변경사항이 생기므로 '기존 데이터와 amount 불일치(변경 대상): 사업자번호=10002000, 결제일자=2025-01-01, 기존 amount=400.00, 새 amount=500.00' 와 같이 콘솔에 찍힘.
  */
 @Slf4j
 @Configuration
 @AllArgsConstructor
 public class Ex15_PaymentStatisticsJobConfig {
-    private final EntityManagerFactory entityManagerFactory;
+
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
     private final DataSource dataSource;
     private final ArgumentProperties properties;
-    private final ClearExistingDataJobListener clearExistingDataJobListener;
+    private final PaymentDailyStatisticsRecoveryService paymentDailyStatisticsRecoveryService;
 
     private final int chunkSize = 100;
 
@@ -68,7 +75,6 @@ public class Ex15_PaymentStatisticsJobConfig {
     public Job paymentStatisticsJob(Step paymentStatisticsStep) {
         return new JobBuilder("paymentStatisticsJob", jobRepository)
                 .incrementer(new RunIdIncrementer())
-                .listener(clearExistingDataJobListener)
                 .start(paymentStatisticsStep)
                 .build();
     }
@@ -80,14 +86,12 @@ public class Ex15_PaymentStatisticsJobConfig {
     @Bean
     public Step paymentStatisticsStep(
             JdbcCursorItemReader<PaymentStatisticsDailySum> paymentStatisticsReader,
-            ItemProcessor<PaymentStatisticsDailySum, PaymentDailyStatistics> paymentStatisticsProcessor,
-            JpaItemWriter<PaymentDailyStatistics> paymentStatisticsWriter
+            ItemWriter<PaymentStatisticsDailySum> paymentStatisticsWriter
     ) {
         return new StepBuilder("paymentStatisticsStep", jobRepository)
-                .<PaymentStatisticsDailySum, PaymentDailyStatistics>chunk(chunkSize, transactionManager)
+                .<PaymentStatisticsDailySum, PaymentStatisticsDailySum>chunk(chunkSize, transactionManager)
                 .listener(new StepDurationTrackerListener()) // Step 소요 시간 측정 리스너
                 .reader(paymentStatisticsReader)
-                .processor(paymentStatisticsProcessor)
                 .writer(paymentStatisticsWriter)
                 .listener(new ChunkDurationTrackerListener()) // Chunk 소요 시간 측정 리스너
                 .build();
@@ -105,7 +109,8 @@ public class Ex15_PaymentStatisticsJobConfig {
                 SELECT
                     SUM(amount) as totalAmount,
                     corp_name as corpName,
-                    business_registration_number as businessRegistrationNumber
+                    business_registration_number as businessRegistrationNumber,
+                    payment_date_time as paymentDateTime
                 FROM payment_source_v2
                 WHERE payment_date_time >= '%s 00:00:00'
                   AND payment_date_time < '%s 00:00:00'
@@ -123,43 +128,16 @@ public class Ex15_PaymentStatisticsJobConfig {
     }
 
     /**
-     * [Processor]
-     * Reader에서 읽어온 집계 데이터(DTO)를 실제 저장할 엔티티(PaymentDailyStatistics)로 변환합니다.
-     * 이미 해당 날짜/사업자번호로 저장된 통계가 있다면 금액을 더하고, 없다면 새로 생성합니다. (UPSERT 로직)
-     */
-    @Bean
-    public ItemProcessor<PaymentStatisticsDailySum, PaymentDailyStatistics> processor(
-    ) {
-        return dto -> new PaymentDailyStatistics(
-                dto.corpName,
-                dto.businessRegistrationNumber,
-                dto.totalAmount,
-                properties.getPaymentDate()
-        );
-    }
-
-    /**
      * [Writer]
      * Processor가 전달한 PaymentDailyStatistics 엔티티를 DB에 저장합니다.
      * JpaItemWriter는 엔티티의 상태에 따라 자동으로 INSERT 또는 UPDATE를 수행합니다.
      */
     @Bean
-    public JpaItemWriter<PaymentDailyStatistics> writer() {
-        return new JpaItemWriterBuilder<PaymentDailyStatistics>()
-                .entityManagerFactory(entityManagerFactory)
-                .build();
-    }
-
-    /**
-     * Reader가 SQL 조회 결과를 매핑할 DTO(Data Transfer Object) 클래스입니다.
-     */
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    public static class PaymentStatisticsDailySum {
-        private BigDecimal totalAmount;
-        private String corpName;
-        private String businessRegistrationNumber;
+    public ItemWriter<PaymentStatisticsDailySum> writer() {
+        return chunk -> {
+            @SuppressWarnings("unchecked") final List<PaymentStatisticsDailySum> items = (List<PaymentStatisticsDailySum>) chunk.getItems();
+            paymentDailyStatisticsRecoveryService.recovery(items);
+        };
     }
 
 }
