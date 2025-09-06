@@ -10,11 +10,11 @@ import org.springframework.web.client.RestTemplate;
  * @param <T> 아이템 타입
  */
 public class HttpPageItemReaderBuilder<T> {
-
     protected String baseUrl;
     protected RestTemplate restTemplate;
     protected int size = 10;
     protected ParameterizedTypeReference<PageResponse<T>> responseType;
+    protected boolean ignoreErrors = false; // 기본값은 false
 
     public HttpPageItemReaderBuilder<T> baseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
@@ -26,13 +26,25 @@ public class HttpPageItemReaderBuilder<T> {
         return this;
     }
 
-    public HttpPageItemReaderBuilder<T> size(int size) {
+    public HttpPageItemReaderBuilder<T> size(int size) { // size -> pageSize로 변경
         this.size = size;
         return this;
     }
 
     public HttpPageItemReaderBuilder<T> responseType(ParameterizedTypeReference<PageResponse<T>> responseType) {
         this.responseType = responseType;
+        return this;
+    }
+
+    /**
+     * API 호출 중 오류 발생 시 예외를 무시할지 여부를 설정합니다.
+     *
+     * @param ignoreErrors true로 설정하면 오류 발생 시 해당 페이지만 건너뛰고 배치를 계속 진행합니다.
+     *                     false(기본값)로 설정하면 예외를 던져 배치를 실패시킵니다.
+     * @return 빌더 자신
+     */
+    public HttpPageItemReaderBuilder<T> ignoreErrors(boolean ignoreErrors) {
+        this.ignoreErrors = ignoreErrors;
         return this;
     }
 

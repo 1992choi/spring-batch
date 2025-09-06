@@ -1,5 +1,6 @@
 package com.example.springbatch.common;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.support.AbstractItemCountingItemStreamItemReader;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -18,7 +19,10 @@ import java.util.List;
  *
  * @param <T> API 응답의 content 필드에 포함된 개별 아이템의 DTO(Data Transfer Object) 타입입니다.
  */
+
+@Slf4j
 public class HttpPageItemReader<T> extends AbstractItemCountingItemStreamItemReader<T> {
+
 
     // 요청을 보낼 기본 URL
     private final String baseUrl;
@@ -45,6 +49,11 @@ public class HttpPageItemReader<T> extends AbstractItemCountingItemStreamItemRea
      */
     private final ParameterizedTypeReference<PageResponse<T>> responseType;
 
+    // API 호출 중 오류가 발생했을 때 해당 오류를 무시하고 계속 진행할지 여부를 결정하는 플래그
+    // - true: 오류가 발생해도 Step을 실패시키지 않고, null을 반환하여 해당 페이지만 건너뜁니다.
+    // - false: 오류가 발생하면 예외를 던져 Step을 즉시 실패시킵니다. (기본값)
+    private final boolean ignoreErrors;
+
     // 현재 페이지에서 가져온 아이템들을 임시로 저장하는 리스트 (버퍼 역할)
     private List<T> items;
 
@@ -68,6 +77,7 @@ public class HttpPageItemReader<T> extends AbstractItemCountingItemStreamItemRea
         this.restTemplate = builder.restTemplate;
         this.size = builder.size;
         this.responseType = builder.responseType;
+        this.ignoreErrors = builder.ignoreErrors;
     }
 
     /**
@@ -79,47 +89,64 @@ public class HttpPageItemReader<T> extends AbstractItemCountingItemStreamItemRea
      */
     @Override
     protected T doRead() throws Exception {
-        // 1. 다음 페이지를 가져와야 하는지 확인하는 조건
-        //  - items가 null일 때: reader가 처음 시작될 때
-        //  - currentItemIndex >= items.size(): 현재 페이지의 모든 아이템을 다 읽었을 때
-        if (items == null || currentItemIndex >= items.size()) {
-            // 마지막 페이지였다면 더 이상 API를 호출하지 않고 null을 반환하여 읽기를 종료
+        // 아이템 버퍼가 비어있으면 새로운 페이지를 가져온다.
+        // 이 로직을 반복문으로 감싸서, 오류 발생 시 다음 페이지를 계속 시도할 수 있도록 한다.
+        while (items == null || currentItemIndex >= items.size()) {
+            // 이미 마지막 페이지까지 모두 처리했다면, 더 이상 읽을 데이터가 없으므로 null을 반환한다.
             if (lastPage) {
                 return null;
             }
 
-            // 2. API 요청을 위한 URI 생성 (e.g., http://localhost:8080/api/members?page=0&size=10)
+            // API 요청을 위한 URI를 생성한다. (e.g., http://localhost:8080/api/members?page=0&size=10)
             UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(baseUrl)
                     .queryParam("page", page)
                     .queryParam("size", size);
 
-            // 3. RestTemplate을 사용하여 API 호출
-            //    - responseType을 전달하여 제네릭 타입 소거 문제를 해결합니다.
-            ResponseEntity<PageResponse<T>> response = restTemplate.exchange(
-                    uriBuilder.toUriString(),
-                    HttpMethod.GET,
-                    null, // 요청 본문(body)은 없음
-                    responseType
-            );
+            PageResponse<T> pageResponse;
+            try {
+                // 3. RestTemplate을 사용하여 API를 호출한다.
+                ResponseEntity<PageResponse<T>> response = restTemplate.exchange(
+                        uriBuilder.toUriString(),
+                        HttpMethod.GET,
+                        null, // 요청 본문(body)은 없음
+                        responseType
+                );
+                pageResponse = response.getBody();
 
-            PageResponse<T> pageResponse = response.getBody();
-
-            // 4. 응답 검증 및 상태 업데이트
-            //    - 응답 본문이 없거나, content 리스트가 비어있으면 읽기 종료
-            if (pageResponse == null || pageResponse.getContent() == null || pageResponse.getContent().isEmpty()) {
-                return null;
+            } catch (Exception ex) {
+                // API 호출 중 예외가 발생했을 때의 처리
+                if (ignoreErrors) {
+                    // 오류 무시 옵션이 켜져 있으면, 경고 로그를 남기고 현재 페이지를 건너뛴다.
+                    log.error("API call for page {} failed and will be skipped. Reason: {}", page, ex.getMessage());
+                    this.page++; // 다음 페이지 번호로 이동
+                    continue;    // while문의 다음 반복을 실행하여 다음 페이지를 가져오도록 시도
+                } else {
+                    // 오류 무시 옵션이 꺼져 있으면, 예외를 던져 Job을 즉시 실패시킨다.
+                    log.error("API call for page {} failed.", page, ex);
+                    throw new RuntimeException("Failed to fetch page " + page, ex);
+                }
             }
 
-            // 5. 다음 페이지를 위해 리더의 내부 상태를 업데이트
-            this.items = pageResponse.getContent(); // 가져온 아이템 리스트를 버퍼에 저장
-            this.lastPage = pageResponse.isLast();   // 마지막 페이지 여부 업데이트
-            this.page++;                             // 다음 요청을 위해 페이지 번호 증가
-            this.currentItemIndex = 0;               // 새 리스트를 받았으므로 인덱스 초기화
+            // 정상적으로 API를 호출한 후, 다음 요청을 위해 페이지 번호를 1 증가시킨다.
+            this.page++;
+
+            // 4. 응답 본문이 비어있는지 확인한다.
+            if (pageResponse == null || pageResponse.getContent() == null || pageResponse.getContent().isEmpty()) {
+                // 응답이 비어있으면 마지막 페이지로 간주하고 읽기를 종료한다.
+                this.lastPage = true;
+                // 현재 페이지가 비었으므로, while문을 다시 실행하여 lastPage 조건을 확인하고 종료하도록 한다.
+                continue;
+            }
+
+            // 5. 가져온 데이터를 내부 버퍼(items)에 저장하고 상태를 업데이트한다.
+            this.items = pageResponse.getContent();
+            this.lastPage = pageResponse.isLast();
+            this.currentItemIndex = 0;
         }
 
-        // 6. 현재 페이지 버퍼(`items`)에서 다음 아이템을 가져와 반환
+        // 6. 버퍼에서 다음 아이템을 하나씩 꺼내 반환한다.
         T nextItem = items.get(currentItemIndex);
-        currentItemIndex++; // 다음 아이템을 가리키도록 인덱스 증가
+        currentItemIndex++;
         return nextItem;
     }
 

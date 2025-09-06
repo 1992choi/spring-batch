@@ -24,6 +24,10 @@ public class MemberController {
 
     @GetMapping
     public Page<Member> getMembers(@PageableDefault(page = 0, size = 10) Pageable pageable) {
+        if (pageable.getPageNumber() == 4) {
+            throw new RuntimeException("간헐적 예외 발생");
+        }
+
         // 1~100까지 Member 생성
         List<Member> allMembers = IntStream.rangeClosed(1, 100)
                 .mapToObj(i -> new Member((long) i, "Member " + i, "Member " + i + "@google.com"))
