@@ -463,8 +463,8 @@ INSERT INTO payment_source_v2 (payment_date_time, corp_name, business_registrati
 
 
 -- 데이터 확인
-select *from payment_source_v2;
-select *from payment_daily_statistics;
+select * from payment_source_v2;
+select * from payment_daily_statistics;
 
 -- 데이터 삭제
 delete from payment_daily_statistics where  id > 0;

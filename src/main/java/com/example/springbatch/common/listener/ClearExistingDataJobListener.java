@@ -1,5 +1,7 @@
-package com.example.springbatch.common;
+package com.example.springbatch.common.listener;
 
+import com.example.springbatch.common.ArgumentProperties;
+import com.example.springbatch.common.PaymentDailyStatisticsRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.JobExecution;

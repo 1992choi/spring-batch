@@ -7,7 +7,6 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
  * Reader가 SQL 조회 결과를 매핑할 DTO(Data Transfer Object) 클래스입니다.
@@ -20,25 +19,21 @@ public class PaymentStatisticsDailySum {
     private BigDecimal totalAmount;
     private String corpName;
     private String businessRegistrationNumber;
-    private LocalDateTime paymentDateTime;
-
-    public LocalDate getPaymentDate(){
-        return paymentDateTime.toLocalDate();
-    }
+    private LocalDate paymentDate;
 
     public PaymentDailyStatisticsUniqueKey toUniqueKey() {
         return new PaymentDailyStatisticsUniqueKey(
                 businessRegistrationNumber,
-                getPaymentDate()
+                paymentDate
         );
     }
 
-    public PaymentDailyStatistics toEntity(){
+    public PaymentDailyStatistics toEntity() {
         return new PaymentDailyStatistics(
                 corpName,
                 businessRegistrationNumber,
                 totalAmount,
-                getPaymentDate()
+                paymentDate
         );
     }
 

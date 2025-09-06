@@ -7,6 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 
 @ToString
@@ -25,4 +26,10 @@ public class ArgumentProperties {
      * 데이터 삭제 여부
      */
     private Boolean clearExistingData;
+
+    /**
+     * 처리 대상의 결제 일자
+     */
+    private Set<LocalDate> targetPaymentDates;
+
 }
