@@ -45,4 +45,11 @@ public class PaymentSourceV2 {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    public PaymentSourceV2(String corpName, String businessRegistrationNumber, BigDecimal amount, LocalDateTime paymentDateTime) {
+        this.corpName = corpName;
+        this.businessRegistrationNumber = businessRegistrationNumber;
+        this.amount = amount;
+        this.paymentDateTime = paymentDateTime;
+    }
+
 }

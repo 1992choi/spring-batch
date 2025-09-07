@@ -23,6 +23,12 @@ public class PrepareTargetDatesJobListener implements JobExecutionListener {
     public void beforeJob(JobExecution jobExecution) {
         final Set<LocalDate> paymentDateTargets = paymentSourceRepository.findPaymentDatesByTodayUpdates();
         log.info("재처리 대상 paymentDateTargets={}", paymentDateTargets);
+
+        if (paymentDateTargets.isEmpty()) {
+            log.info("재처리 대상 날짜가 없어 Job Parameter로 받은 paymentDate={}를 사용합니다.", properties.getPaymentDate());
+            paymentDateTargets.add(properties.getPaymentDate());
+        }
+
         properties.setTargetPaymentDates(paymentDateTargets);
     }
 

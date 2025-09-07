@@ -45,4 +45,11 @@ public class PaymentDailyStatisticsRepositoryImpl extends QuerydslCustomReposito
                 .fetch();
     }
 
+    @Override
+    public List<PaymentDailyStatistics> findByPaymentDate(LocalDate paymentDate) {
+        return selectFrom(paymentDailyStatistics)
+                .where(paymentDailyStatistics.paymentDate.eq(paymentDate))
+                .fetch();
+    }
+
 }

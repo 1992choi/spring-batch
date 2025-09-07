@@ -11,4 +11,6 @@ public interface PaymentDailyStatisticsRepositoryCustom {
 
     List<PaymentDailyStatistics> findBy(List<PaymentDailyStatisticsUniqueKey> keys);
 
+    List<PaymentDailyStatistics> findByPaymentDate(LocalDate paymentDate);
+
 }
