@@ -354,3 +354,38 @@
       - 각 워커 스텝은 자신만의 트랜잭션 범위 내에서 동작한다.
       - 따라서 특정 워커에서 오류가 발생
         하여 롤백되더라도, 다른 워커들의 트랜잭션에는 영향을 미치지 않아 작업의 격리성을 보장한다.
+
+### 테스트
+- 스프링배치 테스트의 주요 전략
+  - 전체 Job 실행 (End-to-End 테스트)
+    - JobLauncherTestUtils.launchJob()을 이용
+    - 전체 Job 실행 흐름을 처음부터 끝까지 검증
+    - 데이터베이스, 파일 시스템 등 외부 시스템과의 통합 및 비즈니스 로직 수행 검증
+    - 권장되는 가장 중요한 방법
+  - 단일 컴포넌트 단위 테스트 (Step 단위 테스트)
+    - JobLauncherTestUtils.launchStep()을 이용
+    - 복잡한 Job의 개별 Step을 독립적으로 테스트
+    - 특정 Step 오류 격리 및 디버깅 용이
+    - 테스트의 고립성(Isolation) 원칙 준수
+    - 전체 Job 실행의 비효율성 극복
+- 주요 클래스 및 어노테이션
+  - JobLauncherTestUtils
+    - Spring Batch 테스트 환경에서 Job과 Step을 실행하는 핵심 유틸리티 클래스
+    - 주요 메서드
+      - launchJob()
+        - 가장 기본적인 End-to-End 테스트를 위해 사용
+        - 내부적으로 고유한 JobParameter를 생성하여 Job을 시작한다.
+      - launchJob(JobParameters jobParameters)
+        - 특정 비즈니스 시나리오(예: 특정 날짜, 파일명 등)에 따라 Job의 동작을 테스트할 때 사용
+      - setJob(Job job)
+        - 유틸리티가 사용할 Job 인스턴스를 설정
+      - launchStep(String stepName)
+        - 복잡한 Job에서 특정 Step의 로직만 격리하여 테스트할 때 사용
+        - 전체 Job 실행의 비효율성을 줄이고 빠른 디버깅을 가능하게 한다.
+      - launchStep(String stepName, JobParameters jobParameters)
+        - @StepScope 컴포넌트가 JobParameter를 주입받는 경우, 해당 Step을 올바른 파라미터와 함께 테스트할 때 사용
+  - @SpringBatchTest 어노테이션
+    - 테스트 클래스에 Spring Batch 관련 테스트 환경을 자동 설정
+    - JobLauncherTestUtils와 JobRepositoryTestUtils를 자동으로 Bean으로 등록하여 즉시 사용 가능
+    - @StepScope, @JobScope와 같은 스코프가 설정된 Bean 테스트를 위해 필요한 리스너들을 자동 등록
+    - Job Parameter나 Step Execution Context를 동적으로 주입받는 컴포넌트 테스트에 필수적
