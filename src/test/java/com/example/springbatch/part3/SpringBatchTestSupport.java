@@ -17,9 +17,13 @@ import org.springframework.batch.test.JobLauncherTestUtils;
 import org.springframework.batch.test.context.SpringBatchTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestConstructor;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("test")
+@Import(CouponJobTestConfiguration.class)
 public abstract class SpringBatchTestSupport {
 
     @Resource
@@ -106,6 +111,13 @@ public abstract class SpringBatchTestSupport {
         entityManager.getTransaction().begin();
         query.delete(path).execute();
         entityManager.getTransaction().commit();
+    }
+
+    protected String readFile(String path) throws IOException {
+        ClassPathResource resource = new ClassPathResource(path);
+        // getInputStream()과 readAllBytes()는 IOException을 던질 수 있으므로 예외 처리가 필요합니다.
+        // 플랫폼에 따라 달라질 수 있는 기본 문자셋 대신 UTF-8을 명시하여 일관성을 보장합니다.
+        return new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
     }
 
 }
